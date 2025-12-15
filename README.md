@@ -1,723 +1,1632 @@
-import React, { useState, memo } from 'react';
-
-const PostItem = memo(({ post, currentUser, onLike, onRepost, onCommentClick, onViewProfile, onEdit, onDelete }) => (
-  <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-700">
-    <div className="flex items-center mb-3">
-      <div className="w-10 h-10 bg-blue-500 rounded-full mr-3"></div>
-      <div>
-        <div 
-          className="font-bold text-blue-400 hover:text-blue-300 cursor-pointer flex items-center"
-          onClick={() => onViewProfile(post.authorId)}
-        >
-          {post.username}
-          {post.isDeveloper && (
-            <span className="ml-1 text-blue-400">✓</span>
-          )}
-        </div>
-        <div 
-          className="text-gray-400 text-sm hover:text-gray-300 cursor-pointer"
-          onClick={() => onViewProfile(post.authorId)}
-        >
-          {post.handle}
-        </div>
-      </div>
-      <div className="ml-auto text-gray-400 text-sm">{post.time}</div>
-    </div>
-    <div className="mb-4">{post.content}</div>
-    <div className="flex justify-between items-center pt-4 border-t border-gray-700">
-      <div className="flex space-x-6">
-        <button 
-          className="flex items-center text-gray-400 hover:text-white"
-          onClick={() => onCommentClick(post.id)}
-        >
-          💬 <span className="ml-1">{post.comments}</span>
-        </button>
-        <button 
-          className={`flex items-center ${post.repostedBy.includes(currentUser?.id) ? 'text-green-400' : 'text-gray-400 hover:text-white'}`}
-          onClick={() => onRepost(post.id)}
-        >
-          🔄 <span className="ml-1">{post.reposts}</span>
-        </button>
-        <button 
-          className={`flex items-center ${post.likedBy.includes(currentUser?.id) ? 'text-pink-500' : 'text-gray-400 hover:text-white'}`}
-          onClick={() => onLike(post.id)}
-        >
-          {post.likedBy.includes(currentUser?.id) ? '❤️' : '♡'} <span className="ml-1">{post.likes}</span>
-        </button>
-      </div>
-      
-      {currentUser && post.authorId === currentUser.id && (
-        <div className="flex space-x-2">
-          <button 
-            onClick={() => onEdit(post)}
-            className="text-gray-400 hover:text-blue-400 text-sm"
-          >
-            Edit
-          </button>
-          <button 
-            onClick={() => onDelete(post.id)}
-            className="text-gray-400 hover:text-red-400 text-sm"
-          >
-            Hapus
-          </button>
-        </div>
-      )}
-    </div>
-  </div>
-));
-
-const CommentItem = memo(({ comment, onViewProfile }) => (
-  <div className="bg-gray-800 rounded-lg p-3">
-    <div 
-      className="font-bold text-blue-400 hover:text-blue-300 cursor-pointer text-sm flex items-center"
-      onClick={() => onViewProfile(comment.authorId)}
-    >
-      {comment.author}
-      {comment.isDeveloper && (
-        <span className="ml-1 text-blue-400">✓</span>
-      )}
-    </div>
-    <div 
-      className="text-gray-400 hover:text-gray-300 cursor-pointer text-sm"
-      onClick={() => onViewProfile(comment.authorId)}
-    >
-      {comment.authorHandle}
-    </div>
-    <div className="text-gray-300 text-sm mt-1">{comment.content}</div>
-    <div className="text-gray-500 text-xs mt-2">{comment.time}</div>
-  </div>
-));
-
-export default function App() {
-  const [currentScreen, setCurrentScreen] = useState('auth');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isGuest, setIsGuest] = useState(false);
-  const [authMode, setAuthMode] = useState('login');
-  
-  // Akun developer BinnApps: 0 following, 1 juta followers
-  const allUsers = [
-    { 
-      id: 'dev1', 
-      name: 'BinnApps Developer', 
-      username: 'binndev', 
-      password: 'binnprst1123',
-      bio: 'Official Developer - BinnApps Platform', 
-      followers: 1000000,
-      following: 0,
-      posts: 0,
-      banned: false,
-      isDeveloper: true,
-      verified: true,
-      followedBy: [],
-      followingList: []
-    },
-    { 
-      id: '1', 
-      name: 'Ahmad Rizki', 
-      username: 'ahmadrizki45', 
-      password: 'password123',
-      bio: 'AI Enthusiast & Developer', 
-      followers: 1250, 
-      following: 842, 
-      posts: 0,
-      banned: false,
-      isDeveloper: false,
-      verified: false,
-      followedBy: [],
-      followingList: []
-    },
-    { 
-      id: '2', 
-      name: 'Sarah Wijaya', 
-      username: 'sarahwijaya78', 
-      password: 'sarahpass',
-      bio: 'Travel Blogger & Photographer', 
-      followers: 2340, 
-      following: 567, 
-      posts: 0,
-      banned: false,
-      isDeveloper: false,
-      verified: false,
-      followedBy: [],
-      followingList: []
-    },
-  ];
-
-  const [posts, setPosts] = useState([
-    {
-      id: '1',
-      authorId: '1',
-      username: 'Ahmad Rizki',
-      handle: '@ahmadrizki45',
-      content: 'Baru saja menyelesaikan proyek AI yang sangat menarik! Gabungan antara machine learning dan computer vision untuk deteksi dini penyakit tanaman. Siapa yang tertarik kolaborasi?',
-      media: null,
-      likes: 156,
-      likedBy: ['dev1'],
-      comments: 2,
-      commentList: [
-        {
-          id: 'c1',
-          authorId: 'dev1',
-          author: 'BinnApps Developer',
-          authorHandle: '@binndev',
-          content: 'Keren banget! Ini bisa jadi game changer di bidang pertanian. Mau kolaborasi?',
-          time: '1 jam yang lalu',
-          isDeveloper: true
-        },
-        {
-          id: 'c2',
-          authorId: '2',
-          author: 'Sarah Wijaya',
-          authorHandle: '@sarahwijaya78',
-          content: 'Wah keren! Boleh juga dong diajari cara buatnya?',
-          time: '45 menit yang lalu',
-          isDeveloper: false
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BinnApps - Semua cara berinteraksi, dalam satu tempat.</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1d9bf0;
+            --primary-dark: #0d7abf;
+            --dark-bg: #000000;
+            --dark-card: #151515;
+            --dark-border: #333333;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --success: #00ba7c;
+            --danger: #f91880;
+            --warning: #ffad1f;
         }
-      ],
-      reposts: 1,
-      repostedBy: ['dev1'],
-      time: '2 jam yang lalu',
-      isDeveloper: false
-    },
-    {
-      id: '2',
-      authorId: '2',
-      username: 'Sarah Wijaya',
-      handle: '@sarahwijaya78',
-      content: 'Hari ini cuaca sempurna untuk jalan-jalan ke taman kota! 🌸 Siapa yang mau ikut weekend ini? #WeekendVibes #Jakarta',
-      media: { type: 'image', url: 'placeholder-image' },
-      likes: 89,
-      likedBy: [],
-      comments: 1,
-      commentList: [
-        {
-          id: 'c3',
-          authorId: '1',
-          author: 'Ahmad Rizki',
-          authorHandle: '@ahmadrizki45',
-          content: 'Asik! Boleh ikut juga?',
-          time: '30 menit yang lalu',
-          isDeveloper: false
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-      ],
-      reposts: 0,
-      repostedBy: [],
-      time: '4 jam yang lalu',
-      isDeveloper: false
-    },
-  ]);
 
-  const [authData, setAuthData] = useState({
-    loginEmail: '',
-    loginPassword: '',
-    registerName: '',
-    registerEmail: '',
-    registerPassword: '',
-    registerConfirmPassword: ''
-  });
-
-  const [currentUser, setCurrentUser] = useState(null);
-  const [viewedProfile, setViewedProfile] = useState(null);
-  const [showComments, setShowComments] = useState(null);
-  const [newComment, setNewComment] = useState('');
-  const [showPostModal, setShowPostModal] = useState(false);
-  const [postContent, setPostContent] = useState('');
-
-  // Real-time interaction functions
-  const handleLike = (postId) => {
-    if (isGuest || !currentUser || currentUser.banned) {
-      alert('Silakan login untuk menyukai postingan');
-      return;
-    }
-    
-    setPosts(prevPosts => 
-      prevPosts.map(post => {
-        if (post.id === postId) {
-          const alreadyLiked = post.likedBy.includes(currentUser.id);
-          if (alreadyLiked) {
-            return {
-              ...post,
-              likes: post.likes - 1,
-              likedBy: post.likedBy.filter(id => id !== currentUser.id)
-            };
-          } else {
-            return {
-              ...post,
-              likes: post.likes + 1,
-              likedBy: [...post.likedBy, currentUser.id]
-            };
-          }
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
         }
-        return post;
-      })
-    );
-  };
 
-  const handleRepost = (postId) => {
-    if (isGuest || !currentUser || currentUser.banned) {
-      alert('Silakan login untuk repost postingan');
-      return;
-    }
-    
-    setPosts(prevPosts => 
-      prevPosts.map(post => {
-        if (post.id === postId) {
-          const alreadyReposted = post.repostedBy.includes(currentUser.id);
-          if (alreadyReposted) {
-            return {
-              ...post,
-              reposts: post.reposts - 1,
-              repostedBy: post.repostedBy.filter(id => id !== currentUser.id)
-            };
-          } else {
-            return {
-              ...post,
-              reposts: post.reposts + 1,
-              repostedBy: [...post.repostedBy, currentUser.id]
-            };
-          }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
-        return post;
-      })
-    );
-  };
 
-  const handleAddComment = (postId) => {
-    if (isGuest || !currentUser || currentUser.banned) {
-      alert('Silakan login untuk berkomentar');
-      return;
-    }
-    
-    if (newComment.trim() === '') {
-      alert('Komentar tidak boleh kosong');
-      return;
-    }
-    
-    const comment = {
-      id: `c${Date.now()}`,
-      authorId: currentUser.id,
-      author: currentUser.name,
-      authorHandle: `@${currentUser.username}`,
-      content: newComment.trim(),
-      time: 'Baru saja',
-      isDeveloper: currentUser.isDeveloper || false
-    };
-    
-    setPosts(prevPosts => 
-      prevPosts.map(post => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            comments: post.comments + 1,
-            commentList: [...post.commentList, comment]
-          };
+        /* Header */
+        header {
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--dark-border);
         }
-        return post;
-      })
-    );
-    setNewComment('');
-  };
 
-  const toggleComments = (postId) => {
-    setShowComments(showComments === postId ? null : postId);
-  };
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+        }
 
-  const handleLogin = () => {
-    if (authData.loginEmail && authData.loginPassword) {
-      const email = authData.loginEmail.toLowerCase();
-      const password = authData.loginPassword;
-      
-      if (email === 'binndev@gmail.com' && password === 'binnprst1123') {
-        const devUser = allUsers[0];
-        setCurrentUser(devUser);
-        setIsLoggedIn(true);
-        setIsGuest(false);
-        setCurrentScreen('home');
-        return;
-      }
-      
-      const userName = email.split('@')[0];
-      const user = allUsers.find(u => u.username === userName);
-      
-      if (!user) {
-        alert('Akun tidak ditemukan');
-        return;
-      }
-      
-      if (user.banned) {
-        alert('Akun Anda telah dibanned');
-        return;
-      }
-      
-      if (user.password !== password) {
-        alert('Password salah!');
-        return;
-      }
-      
-      setCurrentUser(user);
-      setIsLoggedIn(true);
-      setIsGuest(false);
-      setCurrentScreen('home');
-    }
-  };
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+        }
 
-  const handleRegister = () => {
-    const { registerName, registerEmail, registerPassword, registerConfirmPassword } = authData;
-    
-    if (!registerName || !registerEmail || !registerPassword) {
-      alert('Semua field harus diisi');
-      return;
-    }
-    
-    if (registerPassword.length < 6) {
-      alert('Password minimal 6 karakter');
-      return;
-    }
-    
-    if (registerPassword !== registerConfirmPassword) {
-      alert('Password tidak cocok');
-      return;
-    }
-    
-    if (!registerEmail.includes('@')) {
-      alert('Email tidak valid');
-      return;
-    }
-    
-    const baseUsername = registerName.toLowerCase().replace(/\s+/g, '');
-    const randomNumbers = Math.floor(10 + Math.random() * 90);
-    const generatedUsername = `${baseUsername}${randomNumbers}`;
-    
-    const newUser = {
-      id: `user${Date.now()}`,
-      name: registerName,
-      username: generatedUsername,
-      password: registerPassword,
-      bio: 'Pengguna BinnApps',
-      followers: 0,
-      following: 0,
-      posts: 0,
-      banned: false,
-      isDeveloper: false,
-      verified: false,
-      followedBy: [],
-      followingList: []
-    };
-    
-    setCurrentUser(newUser);
-    setIsLoggedIn(true);
-    setIsGuest(false);
-    setCurrentScreen('home');
-    alert(`Berhasil! Username Anda: @${generatedUsername}`);
-  };
+        .logo i {
+            font-size: 28px;
+        }
 
-  const handleGuestMode = () => {
-    setIsLoggedIn(true);
-    setIsGuest(true);
-    setCurrentScreen('home');
-  };
+        .search-bar {
+            flex: 1;
+            max-width: 500px;
+            margin: 0 20px;
+        }
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setIsGuest(false);
-    setCurrentUser(null);
-    setViewedProfile(null);
-    setCurrentScreen('auth');
-    setAuthData({
-      loginEmail: '',
-      loginPassword: '',
-      registerName: '',
-      registerEmail: '',
-      registerPassword: '',
-      registerConfirmPassword: ''
-    });
-  };
+        .search-bar input {
+            width: 100%;
+            padding: 10px 16px;
+            border-radius: 24px;
+            border: none;
+            background-color: var(--dark-card);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
 
-  // CREATE POST - Bisa dilakukan oleh semua akun yang login
-  const handleCreatePost = () => {
-    if (isGuest || !currentUser || currentUser.banned) {
-      alert('Silakan login untuk membuat postingan');
-      return;
-    }
-    
-    if (postContent.trim() === '') {
-      alert('Postingan tidak boleh kosong');
-      return;
-    }
-    
-    const newPost = {
-      id: `post${Date.now()}`,
-      authorId: currentUser.id,
-      username: currentUser.name,
-      handle: `@${currentUser.username}`,
-      content: postContent.trim(),
-      media: null,
-      likes: 0,
-      likedBy: [],
-      comments: 0,
-      commentList: [],
-      reposts: 0,
-      repostedBy: [],
-      time: 'Baru saja',
-      isDeveloper: currentUser.isDeveloper || false
-    };
-    
-    setPosts(prevPosts => [newPost, ...prevPosts]);
-    setPostContent('');
-    setShowPostModal(false);
-    
-    // Update user post count
-    const updatedUser = { ...currentUser, posts: (currentUser.posts || 0) + 1 };
-    setCurrentUser(updatedUser);
-    
-    // Update allUsers array
-    const updatedAllUsers = allUsers.map(u => 
-      u.id === currentUser.id ? updatedUser : u
-    );
-  };
+        .search-bar input::placeholder {
+            color: var(--text-secondary);
+        }
 
-  const handleEditPost = (post) => {
-    setPostContent(post.content);
-    setShowPostModal(true);
-  };
+        .nav-icons {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
 
-  const handleDeletePost = (postId) => {
-    if (!currentUser || currentUser.banned) return;
-    
-    if (!window.confirm('Hapus postingan ini?')) return;
-    
-    setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
-    
-    const updatedUser = { ...currentUser, posts: Math.max(0, (currentUser.posts || 0) - 1) };
-    setCurrentUser(updatedUser);
-  };
+        .nav-icons i {
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: color 0.2s;
+        }
 
-  const viewUserProfile = (user) => {
-    const foundUser = allUsers.find(u => u.id === user);
-    if (foundUser) {
-      setViewedProfile(foundUser);
-      setCurrentScreen('profile');
-    }
-  };
+        .nav-icons i:hover {
+            color: var(--text-primary);
+        }
 
-  const viewUserFromPost = (userId) => {
-    viewUserProfile(userId);
-  };
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--primary), var(--success));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
-  if (!isLoggedIn && currentScreen === 'auth') {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="text-center max-w-md w-full">
-          <div className="text-4xl font-bold text-blue-400 mb-2">BinnApps</div>
-          <div className="text-gray-400 mb-8">Semua cara berinteraksi, dalam satu tempat.</div>
-          
-          {authMode === 'login' ? (
-            <div className="space-y-3">
-              <input type="email" placeholder="Email" value={authData.loginEmail} onChange={(e) => setAuthData(prev => ({ ...prev, loginEmail: e.target.value }))} className="w-full bg-gray-800 text-white rounded-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <input type="password" placeholder="Password" value={authData.loginPassword} onChange={(e) => setAuthData(prev => ({ ...prev, loginPassword: e.target.value }))} className="w-full bg-gray-800 text-white rounded-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <button onClick={handleLogin} className="w-full bg-blue-600 text-white py-3 rounded-full font-bold">Masuk</button>
-              <button onClick={() => setAuthMode('register')} className="w-full text-blue-400 py-3 font-bold">Belum punya akun? Daftar</button>
-              <button onClick={handleGuestMode} className="w-full text-gray-500 py-3 font-bold">Lanjut tanpa akun</button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <input type="text" placeholder="Nama Lengkap" value={authData.registerName} onChange={(e) => setAuthData(prev => ({ ...prev, registerName: e.target.value }))} className="w-full bg-gray-800 text-white rounded-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <input type="email" placeholder="Email" value={authData.registerEmail} onChange={(e) => setAuthData(prev => ({ ...prev, registerEmail: e.target.value }))} className="w-full bg-gray-800 text-white rounded-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <input type="password" placeholder="Password" value={authData.registerPassword} onChange={(e) => setAuthData(prev => ({ ...prev, registerPassword: e.target.value }))} className="w-full bg-gray-800 text-white rounded-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <input type="password" placeholder="Konfirmasi Password" value={authData.registerConfirmPassword} onChange={(e) => setAuthData(prev => ({ ...prev, registerConfirmPassword: e.target.value }))} className="w-full bg-gray-800 text-white rounded-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <button onClick={handleRegister} className="w-full bg-blue-600 text-white py-3 rounded-full font-bold">Daftar</button>
-              <button onClick={() => setAuthMode('login')} className="w-full text-blue-400 py-3 font-bold">Sudah punya akun? Masuk</button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
+        /* Main Content */
+        .main-content {
+            display: flex;
+            gap: 20px;
+            padding: 20px 0;
+        }
 
-  return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="pb-20 p-4 max-w-2xl mx-auto">
-        {currentScreen === 'home' && (
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h1 className="text-xl font-bold">Beranda</h1>
-              <button onClick={() => setCurrentScreen('notifications')} className="text-xl">🔔</button>
-            </div>
-            {posts.map(post => (
-              <PostItem 
-                key={post.id}
-                post={post}
-                currentUser={currentUser}
-                onLike={handleLike}
-                onRepost={handleRepost}
-                onCommentClick={toggleComments}
-                onViewProfile={viewUserFromPost}
-                onEdit={handleEditPost}
-                onDelete={handleDeletePost}
-              />
-            ))}
-          </div>
-        )}
-        
-        {currentScreen === 'profile' && (
-          <div className="p-4">
-            <div className="bg-gray-800 rounded-xl p-6 mb-6">
-              <div className="flex items-center mb-4">
-                <div className="w-16 h-16 bg-blue-500 rounded-full mr-4"></div>
-                <div className="flex-1">
-                  <div className="flex items-center">
-                    <h2 className="text-xl font-bold text-white">{(viewedProfile || currentUser)?.name}</h2>
-                    {(viewedProfile || currentUser)?.verified && (
-                      <span className="ml-2 text-blue-400">✓</span>
-                    )}
-                  </div>
-                  <p className="text-blue-400">@{(viewedProfile || currentUser)?.username}</p>
-                  <p className="text-gray-300 mt-2">{(viewedProfile || currentUser)?.bio}</p>
-                </div>
-              </div>
-              
-              <div className="flex justify-around py-4 border-t border-gray-700">
-                <div className="text-center">
-                  <div className="text-white font-bold">{(viewedProfile || currentUser)?.posts || 0}</div>
-                  <div className="text-gray-400 text-sm">Posting</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-white font-bold">{(viewedProfile || currentUser)?.following}</div>
-                  <div className="text-gray-400 text-sm">Mengikuti</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-white font-bold">{(viewedProfile || currentUser)?.followers.toLocaleString('id-ID')}</div>
-                  <div className="text-gray-400 text-sm">Pengikut</div>
-                </div>
-              </div>
-            </div>
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .sidebar-item:hover {
+            background-color: var(--dark-card);
+            color: var(--text-primary);
+        }
+
+        .sidebar-item.active {
+            background-color: var(--dark-card);
+            color: var(--primary);
+        }
+
+        .sidebar-item i {
+            font-size: 20px;
+        }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            padding: 16px;
+            background-color: var(--dark-card);
+            border-radius: 16px;
+        }
+
+        .create-post-btn {
+            background: linear-gradient(45deg, var(--primary), var(--success));
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+
+        .create-post-btn:hover {
+            transform: scale(1.02);
+        }
+
+        /* Feed */
+        .feed {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .feed-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--dark-border);
+        }
+
+        .feed-tabs {
+            display: flex;
+            gap: 16px;
+        }
+
+        .feed-tab {
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .feed-tab.active {
+            background-color: var(--dark-card);
+            color: var(--text-primary);
+        }
+
+        /* Post */
+        .post {
+            background-color: var(--dark-card);
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid var(--dark-border);
+        }
+
+        .post-header {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .post-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .post-info {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .post-username {
+            font-weight: 700;
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .verified-badge {
+            color: var(--primary);
+            font-size: 14px;
+        }
+
+        .post-handle {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .post-time {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .post-content {
+            margin: 12px 0;
+            line-height: 1.5;
+        }
+
+        .post-actions {
+            display: flex;
+            justify-content: space-around;
+            padding-top: 16px;
+            border-top: 1px solid var(--dark-border);
+            margin-top: 16px;
+        }
+
+        .post-action {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: all 0.2s;
+        }
+
+        .post-action:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .post-action.like:hover {
+            color: var(--danger);
+        }
+
+        .post-action.repost:hover {
+            color: var(--success);
+        }
+
+        .post-action.comment:hover {
+            color: var(--primary);
+        }
+
+        .post-action.share:hover {
+            color: var(--warning);
+        }
+
+        /* Comments Section */
+        .comments-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--dark-border);
+        }
+
+        .comment-input {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .comment-input input {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--dark-border);
+            background-color: var(--dark-card);
+            color: var(--text-primary);
+        }
+
+        .comment-input button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .comment {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding: 12px;
+            background-color: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+        }
+
+        .comment-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .comment-content {
+            flex: 1;
+        }
+
+        .comment-author {
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .comment-handle {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .comment-text {
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .comment-time {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        /* Right Sidebar */
+        .right-sidebar {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .trending {
+            background-color: var(--dark-card);
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid var(--dark-border);
+        }
+
+        .trending-header {
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .trending-item {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--dark-border);
+            cursor: pointer;
+        }
+
+        .trending-item:last-child {
+            border-bottom: none;
+        }
+
+        .trending-category {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .trending-topic {
+            font-weight: 600;
+        }
+
+        .trending-count {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .suggestions {
+            background-color: var(--dark-card);
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid var(--dark-border);
+        }
+
+        .suggestions-header {
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .suggestion-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--dark-border);
+            cursor: pointer;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .suggestion-info {
+            flex: 1;
+        }
+
+        .suggestion-name {
+            font-weight: 600;
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .suggestion-mutual {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .follow-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .follow-btn:hover {
+            background-color: var(--primary-dark);
+        }
+
+        /* Auth Screens */
+        .auth-screen {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--dark-bg);
+            padding: 20px;
+        }
+
+        .auth-container {
+            background-color: var(--dark-card);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+            border: 1px solid var(--dark-border);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .auth-logo {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .auth-tagline {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .auth-input {
+            padding: 14px 16px;
+            border-radius: 24px;
+            border: 1px solid var(--dark-border);
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
+            font-size: 16px;
+        }
+
+        .auth-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .auth-btn {
+            padding: 14px;
+            border-radius: 24px;
+            border: none;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .login-btn {
+            background: linear-gradient(45deg, var(--primary), var(--success));
+            color: white;
+        }
+
+        .register-btn {
+            background-color: var(--dark-border);
+            color: var(--text-primary);
+        }
+
+        .guest-btn {
+            background: none;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .auth-switch {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-top: 16px;
+        }
+
+        .auth-switch a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* Profile Screen */
+        .profile-header {
+            background-color: var(--dark-card);
+            border-radius: 24px;
+            padding: 32px;
+            margin-bottom: 24px;
+            border: 1px solid var(--dark-border);
+            text-align: center;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--primary), var(--success));
+            margin: 0 auto 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 48px;
+        }
+
+        .profile-name {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .profile-handle {
+            color: var(--primary);
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+
+        .profile-bio {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .profile-stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 16px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 16px;
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* Post Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: var(--dark-card);
+            border-radius: 24px;
+            padding: 32px;
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid var(--dark-border);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid var(--dark-border);
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
+            font-size: 16px;
+            resize: vertical;
+            min-height: 120px;
+            margin-bottom: 24px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 16px;
+        }
+
+        .modal-cancel {
+            flex: 1;
+            padding: 12px;
+            background-color: var(--dark-border);
+            color: var(--text-primary);
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modal-post {
+            flex: 1;
+            padding: 12px;
+            background: linear-gradient(45deg, var(--primary), var(--success));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Hidden elements */
+        .hidden {
+            display: none;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--dark-border);
+            padding: 12px 0;
+        }
+
+        .bottom-nav-items {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .bottom-nav-item.active {
+            color: var(--primary);
+        }
+
+        .bottom-nav-item i {
+            font-size: 20px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
             
-            <button 
-              onClick={handleLogout}
-              className="w-full bg-pink-600 text-white py-3 rounded-lg font-bold"
-            >
-              Logout
-            </button>
-          </div>
-        )}
-        
-        {currentScreen === 'notifications' && (
-          <div className="text-center py-12">
-            <div className="text-4xl mb-4">🔔</div>
-            <p className="text-gray-500">Belum ada notifikasi</p>
-          </div>
-        )}
-        
-        {currentScreen === 'chat' && (
-          <div className="text-center py-12">
-            <div className="text-4xl mb-4">📭</div>
-            <p className="text-gray-500">Belum ada percakapan</p>
-          </div>
-        )}
-      </div>
-
-      {!isGuest && currentScreen === 'home' && (
-        <button 
-          onClick={() => setShowPostModal(true)}
-          className="fixed bottom-20 right-4 w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-lg text-white"
-        >
-          +
-        </button>
-      )}
-
-      <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 flex justify-around py-2">
-        <button onClick={() => setCurrentScreen('home')} className={`flex flex-col items-center text-xs ${currentScreen === 'home' ? 'text-blue-400' : 'text-gray-400'}`}>
-          <div className="text-lg">🏠</div>
-          <div>Beranda</div>
-        </button>
-        <button onClick={() => setCurrentScreen('search')} className={`flex flex-col items-center text-xs ${currentScreen === 'search' ? 'text-blue-400' : 'text-gray-400'}`}>
-          <div className="text-lg">🔍</div>
-          <div>Cari</div>
-        </button>
-        {!isGuest && (
-          <button onClick={() => setShowPostModal(true)} className="flex flex-col items-center text-xs text-gray-400">
-            <div className="text-lg">➕</div>
-            <div>Post</div>
-          </button>
-        )}
-        <button onClick={() => setCurrentScreen('chat')} className={`flex flex-col items-center text-xs ${currentScreen === 'chat' ? 'text-blue-400' : 'text-gray-400'}`}>
-          <div className="text-lg">💬</div>
-          <div>Chat</div>
-        </button>
-        <button onClick={() => { setViewedProfile(null); setCurrentScreen('profile'); }} className={`flex flex-col items-center text-xs ${currentScreen === 'profile' ? 'text-blue-400' : 'text-gray-400'}`}>
-          <div className="text-lg">👤</div>
-          <div>Profil</div>
-        </button>
-      </div>
-
-      {/* Post Modal */}
-      {showPostModal && !isGuest && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end">
-          <div className="bg-gray-800 w-full p-4 rounded-t-2xl">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-bold">Buat Postingan</h2>
-              <button onClick={() => setShowPostModal(false)} className="text-xl text-gray-400">✕</button>
-            </div>
-            <textarea
-              value={postContent}
-              onChange={(e) => setPostContent(e.target.value)}
-              placeholder="Apa yang sedang terjadi?"
-              className="w-full bg-gray-700 text-white rounded-lg p-3 h-24 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
-            />
-            <div className="flex justify-between mt-3">
-              <button 
-                onClick={() => setShowPostModal(false)}
-                className="px-4 py-1.5 text-gray-300 text-sm"
-              >
-                Batal
-              </button>
-              <button 
-                onClick={handleCreatePost}
-                className="px-4 py-1.5 bg-blue-600 text-white rounded font-bold text-sm"
-              >
-                Posting
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Comments Modal */}
-      {showComments !== null && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end">
-          <div className="bg-gray-800 w-full p-4 rounded-t-2xl max-h-96 overflow-y-auto">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-bold">Komentar</h2>
-              <button onClick={() => setShowComments(null)} className="text-xl text-gray-400">✕</button>
-            </div>
+            .sidebar, .right-sidebar {
+                width: 100%;
+            }
             
-            <div className="flex mb-3">
-              <input
-                type="text"
-                placeholder="Tulis komentar..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                className="flex-1 bg-gray-700 text-white rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                onKeyPress={(e) => e.key === 'Enter' && handleAddComment(showComments)}
-              />
-              <button 
-                onClick={() => handleAddComment(showComments)}
-                className="ml-2 bg-blue-600 text-white px-4 py-2 rounded-full text-sm"
-              >
-                Kirim
-              </button>
-            </div>
+            .search-bar {
+                display: none;
+            }
             
-            {posts.find(p => p.id === showComments)?.commentList.map(comment => (
-              <CommentItem 
-                key={comment.id}
-                comment={comment}
-                onViewProfile={viewUserFromPost}
-              />
-            ))}
-          </div>
+            .bottom-nav {
+                display: flex;
+            }
+            
+            .header-content {
+                padding: 12px 16px;
+            }
+            
+            .auth-container {
+                padding: 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-icons i:not(:last-child) {
+                display: none;
+            }
+            
+            .logo span {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth Screen (Default) -->
+    <div id="authScreen" class="auth-screen">
+        <div class="auth-container">
+            <div class="auth-header">
+                <div class="auth-logo">BinnApps</div>
+                <div class="auth-tagline">Semua cara berinteraksi, dalam satu tempat.</div>
+            </div>
+            <div class="auth-form">
+                <input type="email" id="loginEmail" placeholder="Email" class="auth-input">
+                <input type="password" id="loginPassword" placeholder="Password" class="auth-input">
+                <button id="loginBtn" class="auth-btn login-btn">Masuk</button>
+                <button id="registerBtn" class="auth-btn register-btn">Daftar</button>
+                <button id="guestBtn" class="auth-btn guest-btn">Lanjut tanpa akun</button>
+                <div class="auth-switch">
+                    <a href="#" id="switchToRegister">Belum punya akun? Daftar</a>
+                </div>
+            </div>
         </div>
-      )}
     </div>
-  );
-}
+
+    <!-- Register Screen -->
+    <div id="registerScreen" class="auth-screen hidden">
+        <div class="auth-container">
+            <div class="auth-header">
+                <div class="auth-logo">BinnApps</div>
+                <div class="auth-tagline">Semua cara berinteraksi, dalam satu tempat.</div>
+            </div>
+            <div class="auth-form">
+                <input type="text" id="registerName" placeholder="Nama Lengkap" class="auth-input">
+                <input type="email" id="registerEmail" placeholder="Email" class="auth-input">
+                <input type="password" id="registerPassword" placeholder="Password" class="auth-input">
+                <input type="password" id="registerConfirmPassword" placeholder="Konfirmasi Password" class="auth-input">
+                <button id="createAccountBtn" class="auth-btn login-btn">Buat Akun</button>
+                <button id="backToLoginBtn" class="auth-btn register-btn">Sudah punya akun? Masuk</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App (Hidden by default) -->
+    <div id="mainApp" class="hidden">
+        <!-- Header -->
+        <header>
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <i class="fas fa-infinity"></i>
+                        <span>BinnApps</span>
+                    </div>
+                    <div class="search-bar">
+                        <input type="text" id="searchInput" placeholder="Cari di BinnApps...">
+                    </div>
+                    <div class="nav-icons">
+                        <i class="fas fa-home" id="homeNav"></i>
+                        <i class="fas fa-hashtag" id="searchNav"></i>
+                        <i class="far fa-bell" id="notificationsNav"></i>
+                        <i class="far fa-envelope" id="messagesNav"></i>
+                        <div class="user-avatar" id="profileNav">U</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="container">
+            <div class="main-content">
+                <!-- Left Sidebar -->
+                <div class="sidebar">
+                    <div class="sidebar-item active" id="homeSidebar">
+                        <i class="fas fa-home"></i>
+                        <span>Beranda</span>
+                    </div>
+                    <div class="sidebar-item" id="searchSidebar">
+                        <i class="fas fa-hashtag"></i>
+                        <span>Topik</span>
+                    </div>
+                    <div class="sidebar-item" id="communitiesSidebar">
+                        <i class="fas fa-users"></i>
+                        <span>Komunitas</span>
+                    </div>
+                    <div class="sidebar-item" id="reelsSidebar">
+                        <i class="fas fa-video"></i>
+                        <span>Reels</span>
+                    </div>
+                    <div class="sidebar-item" id="bookmarksSidebar">
+                        <i class="fas fa-bookmark"></i>
+                        <span>Disimpan</span>
+                    </div>
+                    <div class="sidebar-item" id="profileSidebar">
+                        <i class="fas fa-user"></i>
+                        <span>Profil</span>
+                    </div>
+                    
+                    <div class="sidebar-bottom">
+                        <button class="create-post-btn" id="createPostBtn">
+                            <i class="fas fa-plus"></i>
+                            Buat Postingan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Feed -->
+                <div class="feed" id="feedContent">
+                    <!-- Posts will be dynamically inserted here -->
+                </div>
+
+                <!-- Right Sidebar -->
+                <div class="right-sidebar">
+                    <div class="trending">
+                        <div class="trending-header">
+                            <i class="fas fa-fire"></i>
+                            <span>Trending di Indonesia</span>
+                        </div>
+                        <div class="trending-item">
+                            <div class="trending-category">Teknologi · Trending</div>
+                            <div class="trending-topic">#AppleM3</div>
+                            <div class="trending-count">42.1K posts</div>
+                        </div>
+                        <div class="trending-item">
+                            <div class="trending-category">Olahraga · Trending</div>
+                            <div class="trending-topic">#PialaDuniaU20</div>
+                            <div class="trending-count">28.7K posts</div>
+                        </div>
+                        <div class="trending-item">
+                            <div class="trending-category">Hiburan · Trending</div>
+                            <div class="trending-topic">#OppenheimerMovie</div>
+                            <div class="trending-count">19.3K posts</div>
+                        </div>
+                    </div>
+
+                    <div class="suggestions">
+                        <div class="suggestions-header">Orang yang Mungkin Anda Kenal</div>
+                        <div class="suggestion-item" data-user-id="dev1">
+                            <div class="suggestion-avatar">B</div>
+                            <div class="suggestion-info">
+                                <div class="suggestion-name">
+                                    BinnApps Developer
+                                    <span class="verified-badge">✓</span>
+                                </div>
+                                <div class="suggestion-mutual">4 koneksi bersama</div>
+                            </div>
+                            <button class="follow-btn">Ikuti</button>
+                        </div>
+                        <div class="suggestion-item" data-user-id="1">
+                            <div class="suggestion-avatar">A</div>
+                            <div class="suggestion-info">
+                                <div class="suggestion-name">Ahmad Rizki</div>
+                                <div class="suggestion-mutual">2 koneksi bersama</div>
+                            </div>
+                            <button class="follow-btn">Ikuti</button>
+                        </div>
+                        <div class="suggestion-item" data-user-id="2">
+                            <div class="suggestion-avatar">S</div>
+                            <div class="suggestion-info">
+                                <div class="suggestion-name">Sarah Wijaya</div>
+                                <div class="suggestion-mutual">7 koneksi bersama</div>
+                            </div>
+                            <button class="follow-btn">Ikuti</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Screen (Hidden by default) -->
+        <div id="profileScreen" class="container hidden">
+            <div class="profile-header">
+                <div class="profile-avatar" id="profileAvatar">B</div>
+                <div class="profile-name" id="profileName">
+                    BinnApps Developer
+                    <span class="verified-badge">✓</span>
+                </div>
+                <div class="profile-handle" id="profileHandle">@binndev</div>
+                <div class="profile-bio" id="profileBio">
+                    Official Developer - BinnApps Platform
+                </div>
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="profilePosts">0</div>
+                        <div class="stat-label">Posting</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="profileFollowing">0</div>
+                        <div class="stat-label">Mengikuti</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="profileFollowers">1.000.000</div>
+                        <div class="stat-label">Pengikut</div>
+                    </div>
+                </div>
+                <button class="logout-btn" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post Modal -->
+    <div id="postModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Buat Postingan</div>
+                <button class="close-btn" id="closePostModal">×</button>
+            </div>
+            <textarea class="modal-input" id="postContent" placeholder="Apa yang sedang terjadi?"></textarea>
+            <div class="modal-actions">
+                <button class="modal-cancel" id="cancelPost">Batal</button>
+                <button class="modal-post" id="submitPost">Posting</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comments Modal -->
+    <div id="commentsModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Komentar</div>
+                <button class="close-btn" id="closeCommentsModal">×</button>
+            </div>
+            <div class="comment-input">
+                <input type="text" id="commentInput" placeholder="Tulis komentar...">
+                <button id="submitComment">Kirim</button>
+            </div>
+            <div id="commentsList">
+                <!-- Comments will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="bottom-nav-items">
+            <div class="bottom-nav-item active" id="bottomHome">
+                <i class="fas fa-home"></i>
+                <span>Beranda</span>
+            </div>
+            <div class="bottom-nav-item" id="bottomSearch">
+                <i class="fas fa-search"></i>
+                <span>Cari</span>
+            </div>
+            <div class="bottom-nav-item" id="bottomPost">
+                <i class="fas fa-plus-circle"></i>
+                <span>Post</span>
+            </div>
+            <div class="bottom-nav-item" id="bottomMessages">
+                <i class="far fa-envelope"></i>
+                <span>Chat</span>
+            </div>
+            <div class="bottom-nav-item" id="bottomProfile">
+                <i class="fas fa-user"></i>
+                <span>Profil</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock data for BinnApps
+        const users = {
+            'dev1': {
+                id: 'dev1',
+                name: 'BinnApps Developer',
+                username: 'binndev',
+                password: 'binnprst1123',
+                bio: 'Official Developer - BinnApps Platform',
+                followers: 1000000,
+                following: 0,
+                posts: 0,
+                isDeveloper: true,
+                verified: true
+            },
+            '1': {
+                id: '1',
+                name: 'Ahmad Rizki',
+                username: 'ahmadrizki45',
+                password: 'password123',
+                bio: 'AI Enthusiast & Developer',
+                followers: 1250,
+                following: 842,
+                posts: 0,
+                isDeveloper: false,
+                verified: false
+            },
+            '2': {
+                id: '2',
+                name: 'Sarah Wijaya',
+                username: 'sarahwijaya78',
+                password: 'sarahpass',
+                bio: 'Travel Blogger & Photographer',
+                followers: 2340,
+                following: 567,
+                posts: 0,
+                isDeveloper: false,
+                verified: false
+            }
+        };
+
+        let posts = [
+            {
+                id: '1',
+                authorId: '1',
+                username: 'Ahmad Rizki',
+                handle: '@ahmadrizki45',
+                content: 'Baru saja menyelesaikan proyek AI yang sangat menarik! Gabungan antara machine learning dan computer vision untuk deteksi dini penyakit tanaman. Siapa yang tertarik kolaborasi?',
+                likes: 156,
+                likedBy: ['dev1'],
+                comments: 2,
+                commentList: [
+                    {
+                        id: 'c1',
+                        authorId: 'dev1',
+                        author: 'BinnApps Developer',
+                        authorHandle: '@binndev',
+                        content: 'Keren banget! Ini bisa jadi game changer di bidang pertanian. Mau kolaborasi?',
+                        time: '1 jam yang lalu'
+                    },
+                    {
+                        id: 'c2',
+                        authorId: '2',
+                        author: 'Sarah Wijaya',
+                        authorHandle: '@sarahwijaya78',
+                        content: 'Wah keren! Boleh juga dong diajari cara buatnya?',
+                        time: '45 menit yang lalu'
+                    }
+                ],
+                reposts: 1,
+                repostedBy: ['dev1'],
+                time: '2 jam yang lalu',
+                isDeveloper: false
+            },
+            {
+                id: '2',
+                authorId: '2',
+                username: 'Sarah Wijaya',
+                handle: '@sarahwijaya78',
+                content: 'Hari ini cuaca sempurna untuk jalan-jalan ke taman kota! 🌸 Siapa yang mau ikut weekend ini? #WeekendVibes #Jakarta',
+                likes: 89,
+                likedBy: [],
+                comments: 1,
+                commentList: [
+                    {
+                        id: 'c3',
+                        authorId: '1',
+                        author: 'Ahmad Rizki',
+                        authorHandle: '@ahmadrizki45',
+                        content: 'Asik! Boleh ikut juga?',
+                        time: '30 menit yang lalu'
+                    }
+                ],
+                reposts: 0,
+                repostedBy: [],
+                time: '4 jam yang lalu',
+                isDeveloper: false
+            }
+        ];
+
+        let currentUser = null;
+        let currentScreen = 'auth';
+        let currentPostId = null;
+
+        // DOM Elements
+        const elements = {
+            authScreen: document.getElementById('authScreen'),
+            registerScreen: document.getElementById('registerScreen'),
+            mainApp: document.getElementById('mainApp'),
+            profileScreen: document.getElementById('profileScreen'),
+            feedContent: document.getElementById('feedContent'),
+            postModal: document.getElementById('postModal'),
+            commentsModal: document.getElementById('commentsModal'),
+            profileAvatar: document.getElementById('profileAvatar'),
+            profileName: document.getElementById('profileName'),
+            profileHandle: document.getElementById('profileHandle'),
+            profileBio: document.getElementById('profileBio'),
+            profilePosts: document.getElementById('profilePosts'),
+            profileFollowing: document.getElementById('profileFollowing'),
+            profileFollowers: document.getElementById('profileFollowers')
+        };
+
+        // Initialize the app
+        function initApp() {
+            // Auth screen event listeners
+            document.getElementById('loginBtn').addEventListener('click', handleLogin);
+            document.getElementById('registerBtn').addEventListener('click', () => {
+                elements.authScreen.classList.add('hidden');
+                elements.registerScreen.classList.remove('hidden');
+            });
+            document.getElementById('guestBtn').addEventListener('click', handleGuestLogin);
+            document.getElementById('switchToRegister').addEventListener('click', (e) => {
+                e.preventDefault();
+                elements.authScreen.classList.add('hidden');
+                elements.registerScreen.classList.remove('hidden');
+            });
+
+            // Register screen event listeners
+            document.getElementById('createAccountBtn').addEventListener('click', handleRegister);
+            document.getElementById('backToLoginBtn').addEventListener('click', () => {
+                elements.registerScreen.classList.add('hidden');
+                elements.authScreen.classList.remove('hidden');
+            });
+
+            // Main app event listeners
+            document.getElementById('createPostBtn').addEventListener('click', showPostModal);
+            document.getElementById('closePostModal').addEventListener('click', hidePostModal);
+            document.getElementById('cancelPost').addEventListener('click', hidePostModal);
+            document.getElementById('submitPost').addEventListener('click', createPost);
+
+            document.getElementById('closeCommentsModal').addEventListener('click', hideCommentsModal);
+            document.getElementById('submitComment').addEventListener('click', addComment);
+
+            // Navigation event listeners
+            document.getElementById('homeNav').addEventListener('click', () => showScreen('home'));
+            document.getElementById('profileNav').addEventListener('click', () => showScreen('profile'));
+            document.getElementById('profileSidebar').addEventListener('click', () => showScreen('profile'));
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+
+            // Bottom nav
+            document.getElementById('bottomHome').addEventListener('click', () => showScreen('home'));
+            document.getElementById('bottomProfile').addEventListener('click', () => showScreen('profile'));
+            document.getElementById('bottomPost').addEventListener('click', showPostModal);
+
+            // Profile suggestions
+            document.querySelectorAll('.suggestion-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-user-id');
+                    viewUserProfile(userId);
+                });
+            });
+        }
+
+        // Auth Functions
+        function handleLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (email === 'binndev@gmail.com' && password === 'binnprst1123') {
+                currentUser = users.dev1;
+                loginSuccess();
+                return;
+            }
+            
+            // Check other users
+            const userKey = Object.keys(users).find(key => {
+                const user = users[key];
+                const userEmail = `${user.username}@gmail.com`;
+                return userEmail === email && user.password === password;
+            });
+            
+            if (userKey) {
+                currentUser = users[userKey];
+                loginSuccess();
+            } else {
+                alert('Email atau password salah!');
+            }
+        }
+
+        function handleRegister() {
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+            
+            if (!name || !email || !password) {
+                alert('Semua field harus diisi');
+                return;
+            }
+            
+            if (password.length < 6) {
+                alert('Password minimal 6 karakter');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                alert('Password dan konfirmasi password tidak cocok');
+                return;
+            }
+            
+            if (!email.includes('@')) {
+                alert('Email tidak valid');
+                return;
+            }
+            
+            // Generate username
+            const baseUsername = name.toLowerCase().replace(/\s+/g, '');
+            const randomNumbers = Math.floor(10 + Math.random() * 90);
+            const username = `${baseUsername}${randomNumbers}`;
+            
+            const newUser = {
+                id: `user${Date.now()}`,
+                name: name,
+                username: username,
+                password: password,
+                bio: 'Pengguna BinnApps',
+                followers: 0,
+                following: 0,
+                posts: 0,
+                isDeveloper: false,
+                verified: false
+            };
+            
+            currentUser = newUser;
+            loginSuccess();
+        }
+
+        function handleGuestLogin() {
+            currentUser = null;
+            showScreen('home');
+            elements.authScreen.classList.add('hidden');
+            elements.mainApp.classList.remove('hidden');
+        }
+
+        function loginSuccess() {
+            elements.authScreen.classList.add('hidden');
+            elements.mainApp.classList.remove('hidden');
+            showScreen('home');
+            renderFeed();
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            elements.profileScreen.classList.add('hidden');
+            elements.mainApp.classList.add('hidden');
+            elements.authScreen.classList.remove('hidden');
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+        }
+
+        // Screen Navigation
+        function showScreen(screen) {
+            currentScreen = screen;
+            
+            if (screen === 'home') {
+                elements.feedContent.classList.remove('hidden');
+                elements.profileScreen.classList.add('hidden');
+                updateActiveNav('home');
+                renderFeed();
+            } else if (screen === 'profile') {
+                elements.feedContent.classList.add('hidden');
+                elements.profileScreen.classList.remove('hidden');
+                updateActiveNav('profile');
+                renderProfile();
+            }
+        }
+
+        function updateActiveNav(activeScreen) {
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelectorAll('.bottom-nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            if (activeScreen === 'home') {
+                document.getElementById('homeSidebar').classList.add('active');
+                document.getElementById('bottomHome').classList.add('active');
+            } else if (activeScreen === 'profile') {
+                document.getElementById('profileSidebar').classList.add('active');
+                document.getElementById('bottomProfile').classList.add('active');
+            }
+        }
+
+        // Post Functions
+        function showPostModal() {
+            if (!currentUser) {
+                alert('Silakan login untuk membuat postingan');
+                return;
+            }
+            elements.postModal.classList.remove('hidden');
+        }
+
+        function hidePostModal() {
+            elements.postModal.classList.add('hidden');
+            document.getElementById('postContent').value = '';
+        }
+
+        function createPost() {
+            const content = document.getElementById('postContent').value.trim();
+            if (!content) {
+                alert('Postingan tidak boleh kosong');
+                return;
+            }
+            
+            const newPost = {
+                id: `post${Date.now()}`,
+                authorId: currentUser.id,
+                username: currentUser.name,
+                handle: `@${currentUser.username}`,
+                content: content,
+                likes: 0,
+                likedBy: [],
+                comments: 0,
+                commentList: [],
+                reposts: 0,
+                repostedBy: [],
+                time: 'Baru saja',
+                isDeveloper: currentUser.isDeveloper || false
+            };
+            
+            posts.unshift(newPost);
+            currentUser.posts = (currentUser.posts || 0) + 1;
+            
+            hidePostModal();
+            renderFeed();
+        }
+
+        // Comment Functions
+        function showCommentsModal(postId) {
+            currentPostId = postId;
+            elements.commentsModal.classList.remove('hidden');
+            renderComments(postId);
+        }
+
+        function hideCommentsModal() {
+            elements.commentsModal.classList.add('hidden');
+            document.getElementById('commentInput').value = '';
+            currentPostId = null;
+        }
+
+        function addComment() {
+            if (!currentUser) {
+                alert('Silakan login untuk berkomentar');
+                return;
+            }
+            
+            const content = document.getElementById('commentInput').value.trim();
+            if (!content) {
+                alert('Komentar tidak boleh kosong');
+                return;
+            }
+            
+            const comment = {
+                id: `c${Date.now()}`,
+                authorId: currentUser.id,
+                author: currentUser.name,
+                authorHandle: `@${currentUser.username}`,
+                content: content,
+                time: 'Baru saja'
+            };
+            
+            const post = posts.find(p => p.id === currentPostId);
+            if (post) {
+                post.comments += 1;
+                post.commentList.push(comment);
+                renderComments(currentPostId);
+                document.getElementById('commentInput').value = '';
+            }
+        }
+
+        // Render Functions
+        function renderFeed() {
+            let feedHTML = '';
+            
+            posts.forEach(post => {
+                const isLiked = post.likedBy.includes(currentUser?.id);
+                const likeClass = isLiked ? 'color: #f91880;' : '';
+                const likeText = isLiked ? '❤️' : '♡';
+                
+                feedHTML += `
+                    <div class="post">
+                        <div class="post-header">
+                            <div class="post-avatar" onclick="viewUserProfile('${post.authorId}')">${post.username.charAt(0)}</div>
+                            <div class="post-info" onclick="viewUserProfile('${post.authorId}')">
+                                <div class="post-username">
+                                    ${post.username}
+                                    ${post.isDeveloper ? '<span class="verified-badge">✓</span>' : ''}
+                                </div>
+                                <div class="post-handle">${post.handle}</div>
+                            </div>
+                            <div class="post-time">${post.time}</div>
+                        </div>
+                        <div class="post-content">${post.content}</div>
+                        <div class="post-actions">
+                            <div class="post-action comment" onclick="showCommentsModal('${post.id}')">
+                                <i class="far fa-comment"></i>
+                                <span>${post.comments}</span>
+                            </div>
+                            <div class="post-action repost">
+                                <i class="fas fa-retweet"></i>
+                                <span>${post.reposts}</span>
+                            </div>
+                            <div class="post-action like" style="${likeClass}" onclick="toggleLike('${post.id}')">
+                                ${likeText}
+                                <span>${post.likes}</span>
+                            </div>
+                            <div class="post-action share">
+                                <i class="fas fa-share"></i>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            elements.feedContent.innerHTML = feedHTML;
+        }
+
+        function renderComments(postId) {
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+            
+            let commentsHTML = '';
+            post.commentList.forEach(comment => {
+                const user = users[comment.authorId] || { name: comment.author, isDeveloper: false };
+                commentsHTML += `
+                    <div class="comment">
+                        <div class="comment-avatar" onclick="viewUserProfile('${comment.authorId}')">${comment.author.charAt(0)}</div>
+                        <div class="comment-content">
+                            <div class="comment-author">
+                                ${comment.author}
+                                ${user.isDeveloper ? '<span class="verified-badge">✓</span>' : ''}
+                            </div>
+                            <div class="comment-handle">${comment.authorHandle}</div>
+                            <div class="comment-text">${comment.content}</div>
+                            <div class="comment-time">${comment.time}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('commentsList').innerHTML = commentsHTML;
+        }
+
+        function renderProfile() {
+            const profile = currentUser || users.dev1;
+            elements.profileAvatar.textContent = profile.name.charAt(0);
+            elements.profileName.innerHTML = `${profile.name} ${profile.verified ? '<span class="verified-badge">✓</span>' : ''}`;
+            elements.profileHandle.textContent = `@${profile.username}`;
+            elements.profileBio.textContent = profile.bio;
+            elements.profilePosts.textContent = profile.posts || 0;
+            elements.profileFollowing.textContent = profile.following;
+            elements.profileFollowers.textContent = profile.followers.toLocaleString('id-ID');
+        }
+
+        // Global functions for onclick attributes
+        function toggleLike(postId) {
+            if (!currentUser) {
+                alert('Silakan login untuk menyukai postingan');
+                return;
+            }
+            
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+            
+            const alreadyLiked = post.likedBy.includes(currentUser.id);
+            if (alreadyLiked) {
+                post.likes -= 1;
+                post.likedBy = post.likedBy.filter(id => id !== currentUser.id);
+            } else {
+                post.likes += 1;
+                post.likedBy.push(currentUser.id);
+            }
+            
+            renderFeed();
+        }
+
+        function viewUserProfile(userId) {
+            const user = users[userId];
+            if (user) {
+                currentUser = user;
+                showScreen('profile');
+            }
+        }
+
+        function showCommentsModal(postId) {
+            window.currentPostId = postId;
+            document.getElementById('commentsModal').classList.remove('hidden');
+            renderComments(postId);
+        }
+
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
+
